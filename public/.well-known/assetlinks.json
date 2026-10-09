@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "in.manacalendar.app",
+      "sha256_cert_fingerprints": [
+        "14:6D:E9:7D:0F:52:CC:AC:C3:9D:69:B1:FB:7A:B3:68:54:3D:A4:44:03:7E:8E:27:0B:46:17:F7:55:76:2C:19"
+      ]
+    }
+  }
+]

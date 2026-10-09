@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Allow: /home
+Allow: /calendar
+Allow: /date/
+Allow: /b/
+Allow: /privacy
+Disallow: /admin/
+Disallow: /business/
+Disallow: /api/
+
+Sitemap: https://manacalendar.in/sitemap.xml

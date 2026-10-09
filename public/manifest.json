@@ -1,0 +1,22 @@
+{
+  "short_name": "Mana Calendar",
+  "name": "Mana Calendar 2027 (మన క్యాలెండర్ 2027)",
+  "description": "Telugu + English Commercial Multi-Tenant Calendar Platform for Indian Users",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#FFFFFF",
+  "theme_color": "#1677F2",
+  "display": "standalone",
+  "orientation": "portrait"
+}

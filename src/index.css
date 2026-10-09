@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: #1677F2;
+    --primary-dark: #0F63D8;
+    --primary-light: #EAF3FF;
+    --primary-selected: #EAF3FF;
+
+    --background: #F8FAFC;
+    --card-background: #FFFFFF;
+    --pure-white: #FFFFFF;
+
+    --text-main: #0F172A;
+    --text-secondary: #475569;
+    --text-muted: #64748B;
+    --text-very-muted: #94A3B8;
+
+    --border: #E2E8F0;
+    --border-soft: #EEF2F7;
+
+    --success: #16A34A;
+    --success-bg: #ECFDF3;
+    --warning: #F59E0B;
+    --warning-bg: #FFF7E6;
+    --error: #EF4444;
+    --error-bg: #FEF2F2;
+
+    --festival-red: #EF4444;
+    --telugu-accent: #F97316;
+    --panchangam-yellow: #F59E0B;
+    --panchangam-purple: #7C3AED;
+    --weather-blue: #0EA5E9;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--text-main);
+    font-family: Inter, "Noto Sans Telugu", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    margin: 0;
+    padding: 0;
+  }
+
+  .font-telugu {
+    font-family: "Noto Sans Telugu", Inter, sans-serif;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Safe area padding for mobile navigation */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0.5rem);
+}
