@@ -1,8 +1,18 @@
 -- ==============================================================================
 -- MANA CALENDAR 2027 -- IDEMPOTENT ALL-IN-ONE SUPABASE DATABASE SETUP
--- Paste this entire script into your Supabase Dashboard -> SQL Editor and click RUN.
--- Safe to re-run multiple times (policies, tables, indexes, and seeds are idempotent).
 -- ==============================================================================
+-- 1. DYNAMIC POLICY CLEANUP (GUARANTEES 100% SUCCESS ON RE-RUNS)
+-- Drops any existing conflicting policies in public & storage schemas.
+-- ==============================================================================
+DO $$ 
+DECLARE 
+    pol RECORD;
+BEGIN
+    FOR pol IN (SELECT policyname, tablename, schemaname FROM pg_policies WHERE schemaname IN ('public', 'storage')) LOOP
+        EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I;', pol.policyname, pol.schemaname, pol.tablename);
+    END LOOP;
+END $$;
+
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 -- FILE: 20261006000001_core_schema.sql
