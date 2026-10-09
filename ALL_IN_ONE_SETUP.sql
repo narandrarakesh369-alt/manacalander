@@ -1,6 +1,7 @@
 -- ==============================================================================
--- MANA CALENDAR 2027 -- COMPLETE ALL-IN-ONE SUPABASE DATABASE SETUP
--- Paste this entire script into your Supabase Dashboard -> SQL Editor and click RUN
+-- MANA CALENDAR 2027 -- IDEMPOTENT ALL-IN-ONE SUPABASE DATABASE SETUP
+-- Paste this entire script into your Supabase Dashboard -> SQL Editor and click RUN.
+-- Safe to re-run multiple times (policies, tables, indexes, and seeds are idempotent).
 -- ==============================================================================
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -504,30 +505,39 @@ ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 -- -----------------------------------------------------------------------------
 -- 3. POLICIES: PUBLIC / SHARED CONTENT (Calendar, Panchangam, Festivals, Plans)
 -- -----------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Public read-only calendar dates" ON public.calendar_dates;
 CREATE POLICY "Public read-only calendar dates" ON public.calendar_dates
     FOR SELECT TO public USING (true);
 
+DROP POLICY IF EXISTS "Admin manage calendar dates" ON public.calendar_dates;
 CREATE POLICY "Admin manage calendar dates" ON public.calendar_dates
     FOR ALL TO authenticated USING (public.is_super_admin());
 
+DROP POLICY IF EXISTS "Public read-only festivals" ON public.festivals;
 CREATE POLICY "Public read-only festivals" ON public.festivals
     FOR SELECT TO public USING (true);
 
+DROP POLICY IF EXISTS "Admin manage festivals" ON public.festivals;
 CREATE POLICY "Admin manage festivals" ON public.festivals
     FOR ALL TO authenticated USING (public.is_super_admin());
 
+DROP POLICY IF EXISTS "Public read-only panchangam" ON public.panchangam;
 CREATE POLICY "Public read-only panchangam" ON public.panchangam
     FOR SELECT TO public USING (true);
 
+DROP POLICY IF EXISTS "Admin manage panchangam" ON public.panchangam;
 CREATE POLICY "Admin manage panchangam" ON public.panchangam
     FOR ALL TO authenticated USING (public.is_super_admin());
 
+DROP POLICY IF EXISTS "Public read-only weather cache" ON public.weather_cache;
 CREATE POLICY "Public read-only weather cache" ON public.weather_cache
     FOR SELECT TO public USING (true);
 
+DROP POLICY IF EXISTS "Public read active plans" ON public.plans;
 CREATE POLICY "Public read active plans" ON public.plans
     FOR SELECT TO public USING (is_active = true);
 
+DROP POLICY IF EXISTS "Admin manage plans" ON public.plans;
 CREATE POLICY "Admin manage plans" ON public.plans
     FOR ALL TO authenticated USING (public.is_super_admin());
 
@@ -537,98 +547,119 @@ CREATE POLICY "Admin manage plans" ON public.plans
 -- -----------------------------------------------------------------------------
 
 -- BUSINESSES
+DROP POLICY IF EXISTS "Public view active businesses" ON public.businesses;
 CREATE POLICY "Public view active businesses" ON public.businesses
     FOR SELECT TO public USING (status = 'active');
 
+DROP POLICY IF EXISTS "Business user view own business" ON public.businesses;
 CREATE POLICY "Business user view own business" ON public.businesses
     FOR SELECT TO authenticated
     USING (business_id = public.get_current_business_id() OR public.is_super_admin());
 
+DROP POLICY IF EXISTS "Business user update own business" ON public.businesses;
 CREATE POLICY "Business user update own business" ON public.businesses
     FOR UPDATE TO authenticated
     USING (business_id = public.get_current_business_id() OR public.is_super_admin())
     WITH CHECK (business_id = public.get_current_business_id() OR public.is_super_admin());
 
 -- BUSINESS PROFILES
+DROP POLICY IF EXISTS "Public view business profiles" ON public.business_profiles;
 CREATE POLICY "Public view business profiles" ON public.business_profiles
     FOR SELECT TO public USING (true);
 
+DROP POLICY IF EXISTS "Business user manage own profile" ON public.business_profiles;
 CREATE POLICY "Business user manage own profile" ON public.business_profiles
     FOR ALL TO authenticated
     USING (business_id = public.get_current_business_id() OR public.is_super_admin())
     WITH CHECK (business_id = public.get_current_business_id() OR public.is_super_admin());
 
 -- CAMPAIGNS (Tenant Isolated)
+DROP POLICY IF EXISTS "Public view active published campaigns" ON public.campaigns;
 CREATE POLICY "Public view active published campaigns" ON public.campaigns
     FOR SELECT TO public USING (status = 'active');
 
+DROP POLICY IF EXISTS "Business tenant manage own campaigns" ON public.campaigns;
 CREATE POLICY "Business tenant manage own campaigns" ON public.campaigns
     FOR ALL TO authenticated
     USING (business_id = public.get_current_business_id() OR public.is_super_admin())
     WITH CHECK (business_id = public.get_current_business_id() OR public.is_super_admin());
 
 -- CAMPAIGN USAGE (Tenant Isolated)
+DROP POLICY IF EXISTS "Business view own campaign usage" ON public.campaign_usage;
 CREATE POLICY "Business view own campaign usage" ON public.campaign_usage
     FOR SELECT TO authenticated
     USING (business_id = public.get_current_business_id() OR public.is_super_admin());
 
+DROP POLICY IF EXISTS "Admin manage campaign usage" ON public.campaign_usage;
 CREATE POLICY "Admin manage campaign usage" ON public.campaign_usage
     FOR ALL TO authenticated USING (public.is_super_admin());
 
 -- BANNERS
+DROP POLICY IF EXISTS "Public view active banners" ON public.banners;
 CREATE POLICY "Public view active banners" ON public.banners
     FOR SELECT TO public USING (status = 'active');
 
+DROP POLICY IF EXISTS "Business manage own banners" ON public.banners;
 CREATE POLICY "Business manage own banners" ON public.banners
     FOR ALL TO authenticated
     USING (business_id = public.get_current_business_id() OR public.is_super_admin())
     WITH CHECK (business_id = public.get_current_business_id() OR public.is_super_admin());
 
 -- MEDIA LIBRARY (Tenant Isolated)
+DROP POLICY IF EXISTS "Business manage own media assets" ON public.media;
 CREATE POLICY "Business manage own media assets" ON public.media
     FOR ALL TO authenticated
     USING (business_id = public.get_current_business_id() OR public.is_super_admin())
     WITH CHECK (business_id = public.get_current_business_id() OR public.is_super_admin());
 
 -- SUBSCRIPTIONS (Read own, manage server/admin only)
+DROP POLICY IF EXISTS "Business view own subscription" ON public.subscriptions;
 CREATE POLICY "Business view own subscription" ON public.subscriptions
     FOR SELECT TO authenticated
     USING (business_id = public.get_current_business_id() OR public.is_super_admin());
 
+DROP POLICY IF EXISTS "Admin manage subscriptions" ON public.subscriptions;
 CREATE POLICY "Admin manage subscriptions" ON public.subscriptions
     FOR ALL TO authenticated USING (public.is_super_admin());
 
 -- PAYMENTS (Read own, create/update via service/admin)
+DROP POLICY IF EXISTS "Business view own payments" ON public.payments;
 CREATE POLICY "Business view own payments" ON public.payments
     FOR SELECT TO authenticated
     USING (business_id = public.get_current_business_id() OR public.is_super_admin());
 
+DROP POLICY IF EXISTS "Admin manage payments" ON public.payments;
 CREATE POLICY "Admin manage payments" ON public.payments
     FOR ALL TO authenticated USING (public.is_super_admin());
 
 -- -----------------------------------------------------------------------------
 -- 5. POLICIES: CUSTOMER DATA PROTECTION
 -- -----------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Customer manage own record" ON public.customers;
 CREATE POLICY "Customer manage own record" ON public.customers
     FOR ALL TO authenticated
     USING (auth_user_id = auth.uid() OR public.is_super_admin())
     WITH CHECK (auth_user_id = auth.uid() OR public.is_super_admin());
 
+DROP POLICY IF EXISTS "Customer manage own personal events" ON public.user_events;
 CREATE POLICY "Customer manage own personal events" ON public.user_events
     FOR ALL TO authenticated
     USING (customer_id = public.get_current_customer_id() OR public.is_super_admin())
     WITH CHECK (customer_id = public.get_current_customer_id() OR public.is_super_admin());
 
+DROP POLICY IF EXISTS "Customer manage own reminders" ON public.reminders;
 CREATE POLICY "Customer manage own reminders" ON public.reminders
     FOR ALL TO authenticated
     USING (customer_id = public.get_current_customer_id() OR public.is_super_admin())
     WITH CHECK (customer_id = public.get_current_customer_id() OR public.is_super_admin());
 
+DROP POLICY IF EXISTS "Customer manage own notification preferences" ON public.notification_preferences;
 CREATE POLICY "Customer manage own notification preferences" ON public.notification_preferences
     FOR ALL TO authenticated
     USING (auth_user_id = auth.uid() OR public.is_super_admin())
     WITH CHECK (auth_user_id = auth.uid() OR public.is_super_admin());
 
+DROP POLICY IF EXISTS "Customer manage own device tokens" ON public.notification_devices;
 CREATE POLICY "Customer manage own device tokens" ON public.notification_devices
     FOR ALL TO public
     USING (auth_user_id = auth.uid() OR auth_user_id IS NULL)
@@ -637,15 +668,19 @@ CREATE POLICY "Customer manage own device tokens" ON public.notification_devices
 -- -----------------------------------------------------------------------------
 -- 6. POLICIES: SUPER ADMIN & AUDIT LOGS
 -- -----------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Super admin manage admin users" ON public.admin_users;
 CREATE POLICY "Super admin manage admin users" ON public.admin_users
     FOR ALL TO authenticated USING (public.is_super_admin());
 
+DROP POLICY IF EXISTS "Super admin manage platform settings" ON public.platform_settings;
 CREATE POLICY "Super admin manage platform settings" ON public.platform_settings
     FOR ALL TO authenticated USING (public.is_super_admin());
 
+DROP POLICY IF EXISTS "Super admin view audit logs" ON public.audit_logs;
 CREATE POLICY "Super admin view audit logs" ON public.audit_logs
     FOR SELECT TO authenticated USING (public.is_super_admin());
 
+DROP POLICY IF EXISTS "System insert audit logs" ON public.audit_logs;
 CREATE POLICY "System insert audit logs" ON public.audit_logs
     FOR INSERT TO authenticated WITH CHECK (true);
 
@@ -672,22 +707,22 @@ ON CONFLICT (id) DO UPDATE SET
     allowed_mime_types = EXCLUDED.allowed_mime_types;
 
 -- 2. STORAGE POLICIES: PUBLIC READ ACCESS FOR PUBLIC ASSETS
-CREATE POLICY "Public Read Business Logos"
-    ON storage.objects FOR SELECT TO public
+DROP POLICY IF EXISTS "Public Read Business Logos" ON storage.objects;
+CREATE POLICY "Public Read Business Logos" ON storage.objects FOR SELECT TO public
     USING (bucket_id = 'business-logos');
 
-CREATE POLICY "Public Read Business Banners"
-    ON storage.objects FOR SELECT TO public
+DROP POLICY IF EXISTS "Public Read Business Banners" ON storage.objects;
+CREATE POLICY "Public Read Business Banners" ON storage.objects FOR SELECT TO public
     USING (bucket_id = 'business-banners');
 
-CREATE POLICY "Public Read Campaign Media"
-    ON storage.objects FOR SELECT TO public
+DROP POLICY IF EXISTS "Public Read Campaign Media" ON storage.objects;
+CREATE POLICY "Public Read Campaign Media" ON storage.objects FOR SELECT TO public
     USING (bucket_id = 'campaign-media');
 
 -- 3. STORAGE POLICIES: TENANT ISOLATION (Folder path must start with current business_id)
 -- Folder format: {business_id}/{filename} e.g. SLJ001/logo.png
-CREATE POLICY "Tenant Upload Business Logos"
-    ON storage.objects FOR INSERT TO authenticated
+DROP POLICY IF EXISTS "Tenant Upload Business Logos" ON storage.objects;
+CREATE POLICY "Tenant Upload Business Logos" ON storage.objects FOR INSERT TO authenticated
     WITH CHECK (
         bucket_id = 'business-logos' AND
         (
@@ -696,8 +731,8 @@ CREATE POLICY "Tenant Upload Business Logos"
         )
     );
 
-CREATE POLICY "Tenant Update Business Logos"
-    ON storage.objects FOR UPDATE TO authenticated
+DROP POLICY IF EXISTS "Tenant Update Business Logos" ON storage.objects;
+CREATE POLICY "Tenant Update Business Logos" ON storage.objects FOR UPDATE TO authenticated
     USING (
         bucket_id = 'business-logos' AND
         (
@@ -706,8 +741,8 @@ CREATE POLICY "Tenant Update Business Logos"
         )
     );
 
-CREATE POLICY "Tenant Delete Business Logos"
-    ON storage.objects FOR DELETE TO authenticated
+DROP POLICY IF EXISTS "Tenant Delete Business Logos" ON storage.objects;
+CREATE POLICY "Tenant Delete Business Logos" ON storage.objects FOR DELETE TO authenticated
     USING (
         bucket_id = 'business-logos' AND
         (
@@ -717,8 +752,8 @@ CREATE POLICY "Tenant Delete Business Logos"
     );
 
 -- TENANT ISOLATED BANNERS
-CREATE POLICY "Tenant Manage Business Banners"
-    ON storage.objects FOR ALL TO authenticated
+DROP POLICY IF EXISTS "Tenant Manage Business Banners" ON storage.objects;
+CREATE POLICY "Tenant Manage Business Banners" ON storage.objects FOR ALL TO authenticated
     USING (
         bucket_id = 'business-banners' AND
         (
@@ -735,8 +770,8 @@ CREATE POLICY "Tenant Manage Business Banners"
     );
 
 -- TENANT ISOLATED CAMPAIGN MEDIA
-CREATE POLICY "Tenant Manage Campaign Media"
-    ON storage.objects FOR ALL TO authenticated
+DROP POLICY IF EXISTS "Tenant Manage Campaign Media" ON storage.objects;
+CREATE POLICY "Tenant Manage Campaign Media" ON storage.objects FOR ALL TO authenticated
     USING (
         bucket_id = 'campaign-media' AND
         (
@@ -753,8 +788,8 @@ CREATE POLICY "Tenant Manage Campaign Media"
     );
 
 -- TENANT PRIVATE MEDIA (Read & Write restricted to tenant or Super Admin)
-CREATE POLICY "Tenant Manage Private Media"
-    ON storage.objects FOR ALL TO authenticated
+DROP POLICY IF EXISTS "Tenant Manage Private Media" ON storage.objects;
+CREATE POLICY "Tenant Manage Private Media" ON storage.objects FOR ALL TO authenticated
     USING (
         bucket_id = 'private-media' AND
         (
@@ -970,16 +1005,16 @@ $$;
 -- 9. RLS POLICIES FOR NEW TABLES
 ALTER TABLE public.notification_deliveries ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view deliveries for their notifications"
-    ON public.notification_deliveries FOR SELECT
+DROP POLICY IF EXISTS "Users can view deliveries for their notifications" ON public.notification_deliveries;
+CREATE POLICY "Users can view deliveries for their notifications" ON public.notification_deliveries FOR SELECT
     USING (
         notification_id IN (
             SELECT id FROM public.notifications WHERE recipient_id = auth.uid()
         )
     );
 
-CREATE POLICY "Service and Super Admin can manage deliveries"
-    ON public.notification_deliveries FOR ALL
+DROP POLICY IF EXISTS "Service and Super Admin can manage deliveries" ON public.notification_deliveries;
+CREATE POLICY "Service and Super Admin can manage deliveries" ON public.notification_deliveries FOR ALL
     USING (
         EXISTS (
             SELECT 1 FROM public.admin_users WHERE auth_user_id = auth.uid() AND status = 'active'
@@ -1258,28 +1293,28 @@ ALTER TABLE public.business_analytics_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.deferred_deeplinks ENABLE ROW LEVEL SECURITY;
 
 -- Campaign ledger: Business can view own ledger; Super admin can view all
-CREATE POLICY "Businesses can view own campaign credits ledger"
-    ON public.campaign_credits_ledger FOR SELECT
+DROP POLICY IF EXISTS "Businesses can view own campaign credits ledger" ON public.campaign_credits_ledger;
+CREATE POLICY "Businesses can view own campaign credits ledger" ON public.campaign_credits_ledger FOR SELECT
     USING (
         business_id = current_setting('request.jwt.claims', true)::json->'user_metadata'->>'business_id'
         OR current_setting('request.jwt.claims', true)::json->'user_metadata'->>'role' = 'super_admin'
     );
 
 -- Analytics events: Businesses can view own metrics; public/customers can insert events
-CREATE POLICY "Public can insert analytics events"
-    ON public.business_analytics_events FOR INSERT
+DROP POLICY IF EXISTS "Public can insert analytics events" ON public.business_analytics_events;
+CREATE POLICY "Public can insert analytics events" ON public.business_analytics_events FOR INSERT
     WITH CHECK (true);
 
-CREATE POLICY "Businesses can view own analytics events"
-    ON public.business_analytics_events FOR SELECT
+DROP POLICY IF EXISTS "Businesses can view own analytics events" ON public.business_analytics_events;
+CREATE POLICY "Businesses can view own analytics events" ON public.business_analytics_events FOR SELECT
     USING (
         business_id = current_setting('request.jwt.claims', true)::json->'user_metadata'->>'business_id'
         OR current_setting('request.jwt.claims', true)::json->'user_metadata'->>'role' = 'super_admin'
     );
 
 -- Deferred deeplinks: Public can create and query by token
-CREATE POLICY "Public can access deferred deeplinks"
-    ON public.deferred_deeplinks FOR ALL
+DROP POLICY IF EXISTS "Public can access deferred deeplinks" ON public.deferred_deeplinks;
+CREATE POLICY "Public can access deferred deeplinks" ON public.deferred_deeplinks FOR ALL
     USING (true)
     WITH CHECK (true);
 
@@ -1431,12 +1466,15 @@ ALTER TABLE public.auth_rate_limits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.database_backup_registry ENABLE ROW LEVEL SECURITY;
 
 -- Panchangam Audits (Public read verified, admin write)
+DROP POLICY IF EXISTS "Public read verified panchangam audits" ON public.panchangam_audits;
 CREATE POLICY "Public read verified panchangam audits" ON public.panchangam_audits
     FOR SELECT TO public USING (true);
+DROP POLICY IF EXISTS "Admin manage panchangam audits" ON public.panchangam_audits;
 CREATE POLICY "Admin manage panchangam audits" ON public.panchangam_audits
     FOR ALL TO authenticated USING (public.is_super_admin());
 
 -- Campaign Moderation Logs (Business read own, admin manage)
+DROP POLICY IF EXISTS "Business view own campaign moderation" ON public.campaign_moderation_logs;
 CREATE POLICY "Business view own campaign moderation" ON public.campaign_moderation_logs
     FOR SELECT TO authenticated
     USING (
@@ -1447,14 +1485,17 @@ CREATE POLICY "Business view own campaign moderation" ON public.campaign_moderat
         )
         OR public.is_super_admin()
     );
+DROP POLICY IF EXISTS "Admin manage campaign moderation" ON public.campaign_moderation_logs;
 CREATE POLICY "Admin manage campaign moderation" ON public.campaign_moderation_logs
     FOR ALL TO authenticated USING (public.is_super_admin());
 
 -- Rate Limits (Service role / admin only)
+DROP POLICY IF EXISTS "Admin view auth rate limits" ON public.auth_rate_limits;
 CREATE POLICY "Admin view auth rate limits" ON public.auth_rate_limits
     FOR SELECT TO authenticated USING (public.is_super_admin());
 
 -- Database Backup Registry (Admin only)
+DROP POLICY IF EXISTS "Admin manage database backups" ON public.database_backup_registry;
 CREATE POLICY "Admin manage database backups" ON public.database_backup_registry
     FOR ALL TO authenticated USING (public.is_super_admin());
 
@@ -1573,22 +1614,29 @@ ALTER TABLE public.account_deletion_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.deferred_deeplinks ENABLE ROW LEVEL SECURITY;
 
 -- Production Release Registry (Public read active release metadata, Super Admin manage)
+DROP POLICY IF EXISTS "Public read production releases" ON public.production_release_registry;
 CREATE POLICY "Public read production releases" ON public.production_release_registry
     FOR SELECT TO public USING (is_active = true);
+DROP POLICY IF EXISTS "Admin manage production releases" ON public.production_release_registry;
 CREATE POLICY "Admin manage production releases" ON public.production_release_registry
     FOR ALL TO authenticated USING (public.is_super_admin());
 
 -- Account Deletion Requests (Public create deletion request, Super Admin view & process)
+DROP POLICY IF EXISTS "Public submit account deletion" ON public.account_deletion_requests;
 CREATE POLICY "Public submit account deletion" ON public.account_deletion_requests
     FOR INSERT TO public WITH CHECK (true);
+DROP POLICY IF EXISTS "Admin manage account deletions" ON public.account_deletion_requests;
 CREATE POLICY "Admin manage account deletions" ON public.account_deletion_requests
     FOR ALL TO authenticated USING (public.is_super_admin());
 
 -- Deferred Deep Links (Public insert pending and claim, Business view own)
+DROP POLICY IF EXISTS "Public register deferred deeplink" ON public.deferred_deeplinks;
 CREATE POLICY "Public register deferred deeplink" ON public.deferred_deeplinks
     FOR INSERT TO public WITH CHECK (true);
+DROP POLICY IF EXISTS "Public read pending deferred deeplink" ON public.deferred_deeplinks;
 CREATE POLICY "Public read pending deferred deeplink" ON public.deferred_deeplinks
     FOR SELECT TO public USING (status = 'pending');
+DROP POLICY IF EXISTS "Business view own deferred deeplinks" ON public.deferred_deeplinks;
 CREATE POLICY "Business view own deferred deeplinks" ON public.deferred_deeplinks
     FOR SELECT TO authenticated
     USING (

@@ -15,8 +15,9 @@ const files = [
 ];
 
 let fullSql = `-- ==============================================================================
--- MANA CALENDAR 2027 -- COMPLETE ALL-IN-ONE SUPABASE DATABASE SETUP
--- Paste this entire script into your Supabase Dashboard -> SQL Editor and click RUN
+-- MANA CALENDAR 2027 -- IDEMPOTENT ALL-IN-ONE SUPABASE DATABASE SETUP
+-- Paste this entire script into your Supabase Dashboard -> SQL Editor and click RUN.
+-- Safe to re-run multiple times (policies, tables, indexes, and seeds are idempotent).
 -- ==============================================================================
 `;
 
@@ -36,6 +37,21 @@ if (fs.existsSync(seedPath)) {
   fullSql += fs.readFileSync(seedPath, 'utf-8') + '\n';
 }
 
+// Make CREATE POLICY completely idempotent by adding DROP POLICY IF EXISTS before each
+fullSql = fullSql.replace(/CREATE\s+POLICY\s+("[^"]+"|\w+)\s+ON\s+([^\s\(\);]+)/gi, (match, p1, p2) => {
+  return `DROP POLICY IF EXISTS ${p1} ON ${p2};\nCREATE POLICY ${p1} ON ${p2}`;
+});
+
+// Also make storage bucket insert idempotent
+fullSql = fullSql.replace(/INSERT\s+INTO\s+storage\.buckets\s*\(([^\)]+)\)\s*VALUES\s*\(([^\)]+)\);/gi, (match) => {
+  if (!match.includes('ON CONFLICT')) {
+    return match.replace(/;$/, ' ON CONFLICT (id) DO NOTHING;');
+  }
+  return match;
+});
+
 fs.writeFileSync(path.join(ROOT, 'ALL_IN_ONE_SETUP.sql'), fullSql, 'utf-8');
 fs.writeFileSync(path.join(ROOT, 'supabase', 'ALL_IN_ONE_SETUP.sql'), fullSql, 'utf-8');
-console.log('Created ALL_IN_ONE_SETUP.sql successfully! Total length:', fullSql.length);
+
+console.log('Successfully generated idempotent ALL_IN_ONE_SETUP.sql!');
+console.log('Total characters:', fullSql.length);
